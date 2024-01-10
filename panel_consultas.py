@@ -24,6 +24,8 @@ from datetime import date
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
+access_tocken = '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' 
+
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
 
 server = app.server
@@ -51,6 +53,25 @@ app.layout = dbc.Container([
     
     html.Div(className='row', children='Panel de control de tickets.',
              style={'textAlign': 'center', 'color': 'black', 'fontSize': 30}),
+
+    ############ Subir nuevos archivos #############
+
+    dcc.Upload(
+        id = 'upload-data',
+        children = html.Div([
+            'Para actualizar los datos arrastra o selecciona el archivo'
+        ]),
+        style={
+                'width': '100%',
+                'height': '60px',
+                'lineHeight': '60px',
+                'borderWidth': '1px',
+                'borderStyle': 'dashed',
+                'borderRadius': '5px',
+                'textAlign': 'center',
+                'margin': '10px'
+            }
+    ),
     
     ########### Aquí van los gráficos ###############
     
@@ -147,13 +168,13 @@ app.layout = dbc.Container([
      Input('date-2', 'start_date'),
      Input('date-2', 'end_date'),
      Input('date-3', 'start_date'),
-     Input('date-3', 'end_date')]
+     Input('date-3', 'end_date'),
+     Input('upload-data', 'contents'),
+     Input('upload-data', 'filename')]
 )
 
-def update_output(cuenta_1, cuenta_2, cuenta_3, start_date_1, end_date_1, start_date_2, end_date_2, start_date_3, end_date_3):
+def update_output(cuenta_1, cuenta_2, cuenta_3, start_date_1, end_date_1, start_date_2, end_date_2, start_date_3, end_date_3, data, file_name):
     
-    df_solved = df.loc[lambda x: x['estado'] == 'Cerrado']
-
     ## Cálculo del cumplimiento del SLA
 
     # serie_actualizada = pd.to_datetime(df_solved['fecha_actualizacion'], errors = 'coerce')
@@ -162,6 +183,30 @@ def update_output(cuenta_1, cuenta_2, cuenta_3, start_date_1, end_date_1, start_
     # (pd.to_datetime(pd.to_datetime(x['fecha_creacion'], errors = 'coerce').dt.strftime('%Y-%m-%d')) < end_date)]
 
     ## Filtros para cada df según las fechas seleccionadas. Si no se selecciona fecha, se queda sin filtrar.
+
+    global df
+    
+    if data:
+        try:
+            content_type, content_string = data.split(',')
+            decoded = base64.b64decode(content_string)
+            if 'xlsx' in file_name:
+                df = pd.read_excel(BytesIO(decoded), sheet_name = 'Hoja 1')
+            else:
+                df = pd.read_csv(StringIO(decoded.decode('utf-8')))
+            csv_encoded = df.to_csv(index = False).encode('utf-8')
+            auth = Auth.Token(access_token)
+            g = Github(auth = auth)
+            repo = g.get_repo('dashanid/data_monitoreo')
+            contents = repo.get_contents('descargaTicket.csv')
+            repo.update_file('descargaTicket.csv', f'modificacion a traves de python con fecha {str(date.today())}',decoded, contents.sha)        
+            g.close
+        
+        except Exception as e:
+                print(f"An error occurred: {e}")
+                children = [html.Div('Error processing file. Please try again.', style={'color': 'red'})]
+
+    df_solved = df.loc[lambda x: x['estado'] == 'Cerrado']
 
     if (start_date_1 != None) and  (end_date_1 != None):
         df_1 = df_solved.loc[lambda x: (start_date_1 < pd.to_datetime(pd.to_datetime(x['fecha_creacion'], errors = 'coerce').dt.strftime('%Y-%m-%d'))) &
