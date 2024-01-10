@@ -22,6 +22,12 @@ from datetime import datetime
 from datetime import timedelta
 from datetime import date
 
+## Librerías para trabajar con archivos e interactuar con GitHub.
+from io import BytesIO, StringIO
+
+from github import Github
+from github import Auth
+
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 access_tocken = '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' 
