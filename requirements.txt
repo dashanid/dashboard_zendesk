@@ -6,3 +6,4 @@ gunicorn
 pandas             
 plotly == 5.9.0           
 openpyxl
+pygithub == 2.1.1
