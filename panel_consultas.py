@@ -30,11 +30,13 @@ import base64
 from github import Github
 from github import Auth
 
+import os
+
 import requests
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-access_token = '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'
+access_token = os.environ['token']
 
 account = 'dashanid'
 repository = 'data_monitoreo'
