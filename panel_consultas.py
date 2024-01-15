@@ -25,12 +25,32 @@ from datetime import date
 ## Librerías para trabajar con archivos e interactuar con GitHub.
 from io import BytesIO, StringIO
 
+import base64
+
 from github import Github
 from github import Auth
 
+import requests
+
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-access_tocken = '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' 
+access_token = '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'
+
+account = 'dashanid'
+repository = 'data_monitoreo'
+path = 'descargaTicket.csv'
+
+r = requests.get(
+    'https://api.github.com/repos/{owner}/{repo}/contents/{path}'.format(
+        owner = account, 
+        repo = repository, 
+        path = path
+    ),
+    headers={
+        'accept': 'application/vnd.github.v3.raw',
+        'authorization': 'token {}'.format(access_token)
+    }
+)
 
 app = dash.Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
 
@@ -45,7 +65,12 @@ theme = {
 
 ############## extraer datos ################
 
-df = pd.read_excel('https://github.com/dashanid/dashboard_zendesk/raw/main/descargaTicket.xlsx', sheet_name = 'Hoja 1').loc[lambda x: (x['cuenta_que_recibe'] != 'latindex@anid.cl') & (x['cuenta_que_recibe'] != 'issn@anid.cl')]
+# df = pd.read_excel('https://github.com/dashanid/dashboard_zendesk/raw/main/descargaTicket.xlsx', sheet_name = 'Hoja 1').loc[lambda x: (x['cuenta_que_recibe'] != 'latindex@anid.cl') & (x['cuenta_que_recibe'] != 'issn@anid.cl')]
+
+string_io_obj = StringIO(r.text)
+
+df = pd.read_csv(string_io_obj, sep = ',', index_col = 0).loc[lambda x: (x['cuenta_que_recibe'] != 'latindex@anid.cl') & (x['cuenta_que_recibe'] != 'issn@anid.cl')]
+
 
 ## preparación de los dropdown
 
@@ -205,7 +230,7 @@ def update_output(cuenta_1, cuenta_2, cuenta_3, start_date_1, end_date_1, start_
             g = Github(auth = auth)
             repo = g.get_repo('dashanid/data_monitoreo')
             contents = repo.get_contents('descargaTicket.csv')
-            repo.update_file('descargaTicket.csv', f'modificacion a traves de python con fecha {str(date.today())}',decoded, contents.sha)        
+            repo.update_file('descargaTicket.csv', f'modificacion a traves de python con fecha {str(date.today())}',csv_encoded, contents.sha)        
             g.close
         
         except Exception as e:
