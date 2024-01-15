@@ -34,7 +34,7 @@ import requests
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-access_token = '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'
+access_token = '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'
 
 account = 'dashanid'
 repository = 'data_monitoreo'
